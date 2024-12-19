@@ -6,10 +6,10 @@ import (
 	color "github.com/fatih/color"
 )
 
-func PromptData(value string) string {
+func PromptData(str string) string {
 	var res string
 
-	color.Cyan(value)
+	color.Cyan(str)
 	fmt.Scan(&res)
 
 	return res
