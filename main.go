@@ -3,10 +3,12 @@ package main
 import (
 	account "alari/passwordGeneration/account"
 	repository "alari/passwordGeneration/repository"
+	"alari/passwordGeneration/service"
 	utils "alari/passwordGeneration/utils"
 	"fmt"
 
 	color "github.com/fatih/color"
+	"github.com/joho/godotenv"
 )
 
 var menu = map[string]func(*account.AccountStore){
@@ -16,12 +18,18 @@ var menu = map[string]func(*account.AccountStore){
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		color.Red("Не удалось загрузить env переменные из .env файла")
+	}
+
 	fmt.Println("__Менеджер паролей__")
-	accountStore := account.NewAccountStore(repository.NewJsonRepository("data.json"))
+	accountStore := account.NewAccountStore(repository.NewJsonRepository("data.vault"), *service.NewEncrypter())
 
 Menu:
 	for {
-		variant := getMenu()
+		variant := getVariant()
+
 		menuFunc := menu[variant]
 
 		if menuFunc == nil {
@@ -73,7 +81,7 @@ func deleteAccount(accountStore *account.AccountStore) {
 	}
 }
 
-func getMenu() string {
+func getVariant() string {
 	var variant string
 
 	fmt.Println("1. Создать аккаунт")

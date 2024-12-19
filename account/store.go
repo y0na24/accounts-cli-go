@@ -2,6 +2,7 @@ package account
 
 import (
 	"alari/passwordGeneration/repository"
+	"alari/passwordGeneration/service"
 	"encoding/json"
 	"strings"
 	"time"
@@ -11,15 +12,17 @@ import (
 
 type AccountStore struct {
 	Accounts   []Account
+	encrypter  service.Encrypter
 	UpdatedAt  time.Time
 	repository repository.Repository
 }
 
-func NewAccountStore(repository repository.Repository) *AccountStore {
+func NewAccountStore(repository repository.Repository, encrypter service.Encrypter) *AccountStore {
 	store := &AccountStore{
 		Accounts:   []Account{},
 		UpdatedAt:  time.Now(),
 		repository: repository,
+		encrypter:  encrypter,
 	}
 
 	file, err := store.repository.Read()
@@ -28,7 +31,8 @@ func NewAccountStore(repository repository.Repository) *AccountStore {
 		return store
 	}
 
-	if err = json.Unmarshal(file, store); err != nil {
+	data := store.encrypter.Decrypt(file)
+	if err = json.Unmarshal(data, store); err != nil {
 		color.Red(err.Error())
 		return store
 	}
@@ -53,13 +57,14 @@ func (store *AccountStore) AddAccount(account Account) {
 	store.UpdatedAt = time.Now()
 
 	data, err := store.ToBytes()
+	encryptedData := store.encrypter.Encrypt(data)
 
 	if err != nil {
 		color.Red(err.Error())
 		return
 	}
 
-	store.repository.Write(data)
+	store.repository.Write(encryptedData)
 }
 
 func (store *AccountStore) DeleteAccount(url string) bool {
